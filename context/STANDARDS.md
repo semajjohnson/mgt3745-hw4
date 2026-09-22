@@ -9,6 +9,10 @@ Status: ACTIVE in Module 3. Adapt these rules to your feature and follow them.
 5. Forbidden: inserting user text with innerHTML. Track and source names are always rendered with textContent.
 6. Every form control has a label, and success and error messages appear in announced elements. When savePool fails, the user's typed track and source stay in the inputs.
 7. Every pool item shows the name of the person it came from. An item without a source name is never saved or displayed.
+8. User values reach SQL through `bind()`, never string concatenation.
+9. No credential in the repository. Database ids are addresses and may appear in `wrangler.toml`.
+10. A failed request is shown to the user on the page and is never thrown in the console.
+
 
 If this file and context/CLAUDE.md disagree, STANDARDS.md is the source of truth, and CLAUDE.md is repaired to match.
 
