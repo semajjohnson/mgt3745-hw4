@@ -16,6 +16,10 @@ Do not read /curiosity unless asked.
 3. When a comment is needed, write why the pool behaves that way, such as why items are stored with the date they were added. Do not narrate the line. Delete every console.log before saying you are done.
 4. Write commit messages about pool behavior, such as "Reject pool items with an empty source name." Never write "update files" or "fix bug."
 5. Render every track and source name with textContent. Do not use innerHTML anywhere in app.js; nothing in this project needs it.
+6. Never build SQL by concatenating strings. Use `prepare(...).bind(...)`.
+7. Never write a credential, token, or key into any file in this repository.
+8. Never add a dependency without adding a row to TOOLS.md.
+9. Handle failed responses on the page. Never throw to the console.
 
 Before calling any change finished, run it in Live Server and report what you actually saw. Do not invent test results or interview evidence. Leave STYLE, TOOLS, SKILLS, EVALS and AGENTS as previews.
 
