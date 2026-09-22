@@ -9,18 +9,14 @@ agent follows without being asked.
 PROJECT.md, FEATURES.md, ARCHITECTURE.md, STANDARDS.md, TOOLS.md, STYLE.md.
 Do not read /curiosity unless asked.
 
-## Rules
+# Canonical agent instructions
 
-- Never use `innerHTML` with user input. Use `textContent`.
-- Never build SQL by concatenating strings. Use `prepare(...).bind(...)`.
-- Never write a credential, token, or key into any file in this repository.
-- Never add a dependency without adding a row to TOOLS.md.
-- Every new endpoint implements an EARS statement in FEATURES.md. Quote it in a comment.
-- Handle failed responses on the page. Never throw to the console.
-- Prefer the boring choice. Name any innovation token you spend in an ADR.
-- Small diffs. One concern per commit. Explain why in the message.
+1. Name things after the pool's domain: poolItems for the stored list, savePool, loadPool and renderPool for the three core functions, trackInput and sourceInput for the fields. Add new names in the same camelCase pattern.
+2. Keep all behavior in app.js inside its IIFE, all styling in styles.css, and only markup in index.html. Do not add libraries, CDN scripts, or calls to Spotify or any other API; ADR-001 chose a hand-built page with no platform.
+3. When a comment is needed, write why the pool behaves that way, such as why items are stored with the date they were added. Do not narrate the line. Delete every console.log before saying you are done.
+4. Write commit messages about pool behavior, such as "Reject pool items with an empty source name." Never write "update files" or "fix bug."
+5. Render every track and source name with textContent. Do not use innerHTML anywhere in app.js; nothing in this project needs it.
 
-## When unsure
+Before calling any change finished, run it in Live Server and report what you actually saw. Do not invent test results or interview evidence. Leave STYLE, TOOLS, SKILLS, EVALS and AGENTS as previews.
 
-Ask, in a comment or in the chat, rather than guessing. Say what you could
-not verify.
+Root CLAUDE.md imports this file for Claude Code. VS Code Copilot uses the separate .github/copilot-instructions.md adapter. A location under /context alone is not a guarantee of automatic discovery.
