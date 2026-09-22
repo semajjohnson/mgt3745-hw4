@@ -45,6 +45,38 @@ Serving both Spotify and Apple Music users was considered as a hard constraint a
 | Fit to spec | 5 | 3 (15) | 4 (20) | 3 (15) |
 | **Total** (max 105) | | **91** | **45** | **43** |
 
+## The Gate: HW4 rerun
+
+Where should entries live now that they must survive a cleared cache?
+
+| Criterion | Weight | Build (Worker + D1) | Buy (hosted BaaS) | Delegate (AI builder hosts it) |
+|---|---|---|---|---|
+| Cost to start | | | | |
+| Cost to maintain | | | | |
+| Time to working | | | | |
+| Inspectability | | | | |
+| Switching cost | | *scored from Session B experience* | | |
+| Fit to spec | | | | |
+| **Weighted total** | | | | |
+
+## ADR-002: Entries move from localStorage to Cloudflare D1
+
+**Status:** Proposed
+**Supersedes:** ADR-001
+
+### Context
+What data leaves the browser, to which vendor, under what terms, and who is accountable.
+
+### Decision
+
+### Alternatives considered
+
+### Consequences
+At least one thing that got harder.
+
+### Revisit trigger
+
+
 ## ADR-001
 
 Title and date: ADR-001 — Build the pool as a hand-written browser page instead of on a streaming platform's API. September 22, 2026.
