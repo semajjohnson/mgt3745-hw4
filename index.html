@@ -1,26 +1,37 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Entries</title>
+  <title>The Pool</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
   <main>
-    <h1>Entries</h1>
-    <p class="lede">Replace this heading and copy with your HW3 feature. Structure lives here; presentation in styles.css; behavior and data in app.js.</p>
+    <h1>The Pool</h1>
+    <p class="lede">Music that reached you through a person, kept with the person attached.</p>
 
-    <form id="entry-form">
-      <label for="entry-text">New entry</label>
-      <input id="entry-text" name="text" type="text" autocomplete="off" required>
-      <button type="submit">Save</button>
+    <form id="pool-form" novalidate>
+      <div class="field">
+        <label for="track-input">Track</label>
+        <p id="track-help" class="help">Artist and title, 1 to 200 characters.</p>
+        <input id="track-input" name="track" type="text" aria-describedby="track-help form-error" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="source-input">Who it came from</label>
+        <p id="source-help" class="help">A person's name, 1 to 60 characters. Required.</p>
+        <input id="source-input" name="source" type="text" aria-describedby="source-help form-error" autocomplete="off">
+      </div>
+      <button type="submit">Add to pool</button>
+      <p id="form-error" role="alert"></p>
     </form>
 
-    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <p id="save-status" role="status" aria-live="polite"></p>
 
-    <ul id="entry-list" aria-label="Saved entries"></ul>
+    <h2>Pool</h2>
+    <p id="empty-state">Nothing in the pool yet.</p>
+    <ul id="pool-list" aria-label="Pool items"></ul>
   </main>
-  <script src="app.js"></script>
 </body>
 </html>
