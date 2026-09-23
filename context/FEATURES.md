@@ -95,15 +95,23 @@ Keep your dated Kano hypotheses and selected feature. Use IDs to connect evidenc
 
 ## Verification
 
-| Criterion | Steps and input | Expected result | Observed result | Status | Evidence / commit |
+## Verification
+
+HW3 stored the pool in `localStorage`. HW4 moves it to a Cloudflare Worker and a D1 database, so every statement was re-walked against the deployed page at `https://mgt3745-hw4.semajjohnson.workers.dev`. Three statements were added for behavior the server made possible: A8 and A9 are the Worker's 400 paths, and A7 is now implemented rather than deferred.
+
+| Criterion | Steps and input | Expected result | Observed result | Status | Evidence |
 |---|---|---|---|---|---|
-| A5 (normal action) | Enter a track and a source name, then submit. | The item appears with "from [name]" and the date added. | The item appeared with its source name and date. | PASS | Commit 8eafa45 |
-| A5 (invalid input) | Enter a track, leave "Who it came from" empty, then submit. | An error appears and nothing is added. | An error appeared and nothing was added. | PASS | Commit 8eafa45 |
-| A5 (persistence) | Add two items, then reload the page. | Both items reappear with their source names. | Both items came back after reload. | PASS | Commit 8eafa45 |
-| A5 (save failure) | Add `?failSave` to the URL, then submit a valid entry. | A save error appears, the typed text stays, and the list does not change. | The save error appeared and the typed text stayed in the inputs. | PASS | Commit 8eafa45 |
-| A6 | Add a track from one person, then the same track from a second person. | One entry listing both names. | The items merged into one entry listing both names. | PASS | Commit 8eafa45 |
-| A1, A2, A3, A4 | Not triggerable in this build. | — | No streaming-platform capture exists. | DEFERRED | ADR-001 |
-| A7 | Not triggerable in this build. | — | Dismissal only matters against re-capture, and nothing captures. The Remove button deletes a local row; it does not implement A7. | CANNOT TEST YET | ADR-001 |
+| A5 (normal action) | Enter a track and a source name, submit. | The item appears with "from [name]" and the date. | The item appeared with its source name and date. | PASS | ADR-002 build |
+| A5 (invalid input) | Enter a track, leave the source empty, submit. | Rejected with a message; nothing added. | The page rejected it and added nothing. | PASS | ADR-002 build |
+| A5 (persistence across clients) | Add an entry, then open the page in a second browser. | The entry appears there too. | The entry appeared in the second browser. | PASS | See It Work GIF |
+| A6 | Add a track from one person, then the same track from a second. | One entry listing both names. | The two rows merged into one entry with both names. | PASS | ADR-002 build |
+| A7 | Dismiss an item, then try adding that same track from that same person. | The re-add is refused. | Refused with "that track was dismissed from that person." | PASS — was CANNOT TEST YET in HW3 | `worker.js` dismissal branch |
+| A8 (server 400) | POST a body with no source name. | 400 with a message naming the missing field. | The Worker returned 400 "source required" and the page displayed it. | PASS | `worker.js` validation |
+| A9 (server 400) | Add the same track from the same person twice. | The second submission is refused. | Refused with "that track is already in the pool from that person." | PASS | `worker.js` validation |
+| Network failure | Load the page with `?apiDown`, which points the fetch at an endpoint the Worker does not answer. | The page states the problem and throws nothing uncaught. | The page displayed "Could not load the pool. The server returned 404." Chrome logged the failed request, but no uncaught error appeared. | PASS | Browser console |
+| Server returns 500 | Force the Worker's error branch and confirm the page reports it. | The page shows a server-error message. | Not tested. The 500 branch only fires on an unexpected exception, and I do not yet know how to trigger one on a deployed Worker without shipping broken code. | CANNOT TEST YET | — |
+| Two clients write to the same table | Two browsers add entries at the same time. | Both entries survive; neither overwrites the other. | Not tested. The pool is single-user by design, and ADR-002 defers multi-user behavior; a shared table with two writers is ADR-003 territory. | DEFERRED | ADR-002 |
+| A1, A2, A3, A4 | Not triggerable. | — | No streaming-platform capture exists in this build. | DEFERRED | ADR-001, still deferred by ADR-002 |
 
 | Statement | HW3 verdict | HW4 verdict | Reason |
 |---|---|---|---|
