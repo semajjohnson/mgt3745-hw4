@@ -9,7 +9,7 @@ Two interviews found the same thing from opposite directions: the music people t
 
 ## See It Work
 
-![An entry added in one browser, then the same entry appearing in a second browser that has never loaded the page before](docs/demo-hw4.gif)
+![alt text](ScreenRecording2026-09-23at3.24.18AM-ezgif.com-video-to-gif-converter.gif)
 
 This shows persistence across clients: the entry was created in one browser and appeared in a second, which is only possible because the data left the machine. It is the evidence for the A5 persistence row in [Verification](context/FEATURES.md#verification).
 
