@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const storageKey = 'mgt3745.pool.v1';
+  const apiBase = 'https://mgt3745-hw4.semajjohnson.workers.dev';
   const maxTrackLength = 200;
   const maxSourceLength = 60;
 
@@ -13,47 +13,79 @@
   const saveStatus = document.querySelector('#save-status');
   const emptyState = document.querySelector('#empty-state');
 
-  // ?failSave forces the storage-failure path so it can be tested on demand
-  // without actually filling the browser's storage.
-  const simulateFailedSave = new URLSearchParams(window.location.search).has('failSave');
+  // ?apiDown points the page at a path the Worker does not answer, so the
+  // failed-response path can be demonstrated without taking the server down.
+  const api = new URLSearchParams(window.location.search).has('apiDown')
+    ? apiBase + '/not-a-real-endpoint'
+    : apiBase + '/entries';
 
-  let poolItems = loadPool();
+  let poolItems = [];
 
-  // A stored item is only trusted if it still has at least one source name,
-  // because an unattributed item would break A5 even if it was edited in storage.
-  function isValidItem(item) {
-    return Boolean(item)
-      && typeof item.track === 'string'
-      && typeof item.addedOn === 'string'
-      && Array.isArray(item.sources)
-      && item.sources.length > 0
-      && item.sources.every(name => typeof name === 'string' && name.trim().length > 0);
+  function showError(message) {
+    formError.textContent = message;
+    saveStatus.textContent = '';
   }
 
-  function loadPool() {
-    try {
-      const storedText = window.localStorage.getItem(storageKey);
-      const parsed = storedText === null ? [] : JSON.parse(storedText);
-      if (!Array.isArray(parsed) || !parsed.every(isValidItem)) {
-        throw new Error('Unexpected stored data');
+  // The server returns one row per track-and-person pair, so a track
+  // recommended by two people is merged here for display (A6).
+  function mergeByTrack(rows) {
+    const merged = [];
+    rows.forEach(row => {
+      const match = merged.find(item => item.track.toLowerCase() === row.track.toLowerCase());
+      if (match) {
+        match.sources.push(row.source);
+        match.ids.push(row.id);
+      } else {
+        merged.push({ track: row.track, sources: [row.source], ids: [row.id], createdAt: row.created_at });
       }
-      return parsed;
+    });
+    return merged;
+  }
+
+  async function loadPool() {
+    try {
+      const response = await fetch(api);
+      if (!response.ok) {
+        showError('Could not load the pool. The server returned ' + response.status + '.');
+        return [];
+      }
+      return mergeByTrack(await response.json());
     } catch {
-      // Storage is left as-is so a bad read never overwrites data that might be recoverable.
-      saveStatus.textContent = 'The saved pool could not be read. Stored data was left unchanged.';
+      // A network failure must say so on the page rather than only in the console.
+      showError('Could not reach the server. Check your connection and reload.');
       return [];
     }
   }
 
-  function savePool(nextItems) {
+  async function savePool(track, source) {
     try {
-      if (simulateFailedSave) throw new Error('Simulated write failure');
-      window.localStorage.setItem(storageKey, JSON.stringify(nextItems));
-      return true;
-    } catch {
-      formError.textContent = 'Could not save. Your entry is still here. Try again when storage is available.';
-      saveStatus.textContent = '';
+      const response = await fetch(api, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ track, source })
+      });
+      if (response.ok) return true;
+      // The Worker's 400 messages name the problem, so they are shown as written.
+      showError(await response.text());
       return false;
+    } catch {
+      showError('Could not reach the server. Your entry was not saved.');
+      return false;
+    }
+  }
+
+  async function dismissItem(id) {
+    try {
+      const response = await fetch(apiBase + '/entries/' + id + '/dismiss', { method: 'POST' });
+      if (!response.ok) {
+        showError('Could not dismiss that item. The server returned ' + response.status + '.');
+        return;
+      }
+      poolItems = await loadPool();
+      renderPool();
+      saveStatus.textContent = 'Dismissed. It will not come back from that person.';
+    } catch {
+      showError('Could not reach the server. Nothing was dismissed.');
     }
   }
 
@@ -62,25 +94,18 @@
     return `${sources.slice(0, -1).join(', ')} and ${sources[sources.length - 1]}`;
   }
 
-  function formatDate(isoText) {
-    return new Date(isoText).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-
-  function removeItem(index) {
-    const nextItems = poolItems.filter((item, itemIndex) => itemIndex !== index);
-    if (!savePool(nextItems)) return;
-    poolItems = nextItems;
-    formError.textContent = '';
-    renderPool();
-    saveStatus.textContent = 'Removed from the pool.';
-    trackInput.focus();
+  function formatDate(text) {
+    const parsed = new Date(text.replace(' ', 'T') + 'Z');
+    return Number.isNaN(parsed.getTime())
+      ? text
+      : parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
   function renderPool() {
     poolList.replaceChildren();
     emptyState.hidden = poolItems.length > 0;
 
-    poolItems.forEach((item, index) => {
+    poolItems.forEach(item => {
       const listItem = document.createElement('li');
       const details = document.createElement('div');
       details.className = 'item-details';
@@ -91,30 +116,31 @@
 
       const metaText = document.createElement('span');
       metaText.className = 'item-meta';
-      metaText.textContent = `from ${formatSources(item.sources)} · added ${formatDate(item.addedOn)}`;
+      metaText.textContent = `from ${formatSources(item.sources)} · added ${formatDate(item.createdAt)}`;
 
       details.append(trackText, metaText);
 
-      const removeButton = document.createElement('button');
-      removeButton.type = 'button';
-      removeButton.className = 'remove-button';
-      removeButton.textContent = 'Remove';
-      removeButton.setAttribute('aria-label', `Remove ${item.track}`);
-      removeButton.addEventListener('click', () => removeItem(index));
+      const dismissButton = document.createElement('button');
+      dismissButton.type = 'button';
+      dismissButton.className = 'remove-button';
+      dismissButton.textContent = 'Dismiss';
+      dismissButton.setAttribute('aria-label', `Dismiss ${item.track}`);
+      dismissButton.addEventListener('click', () => {
+        item.ids.forEach(id => dismissItem(id));
+      });
 
-      listItem.append(details, removeButton);
+      listItem.append(details, dismissButton);
       poolList.append(listItem);
     });
   }
 
-  function showError(message, field) {
-    formError.textContent = message;
+  function showFieldError(message, field) {
     field.setAttribute('aria-invalid', 'true');
-    saveStatus.textContent = '';
+    showError(message);
     field.focus();
   }
 
-  poolForm.addEventListener('submit', event => {
+  poolForm.addEventListener('submit', async event => {
     event.preventDefault();
     trackInput.removeAttribute('aria-invalid');
     sourceInput.removeAttribute('aria-invalid');
@@ -124,44 +150,26 @@
     const source = sourceInput.value.trim();
 
     if (track.length < 1 || track.length > maxTrackLength) {
-      showError(`Enter a track of 1 to ${maxTrackLength} characters.`, trackInput);
+      showFieldError(`Enter a track of 1 to ${maxTrackLength} characters.`, trackInput);
       return;
     }
-    // Rejected here, before savePool, because an item with no person attached
-    // is indistinguishable from an algorithmic suggestion (A5).
     if (source.length < 1 || source.length > maxSourceLength) {
-      showError(`Enter the name of the person this came from, 1 to ${maxSourceLength} characters.`, sourceInput);
+      showFieldError(`Enter the name of the person this came from, 1 to ${maxSourceLength} characters.`, sourceInput);
       return;
     }
 
-    const matchIndex = poolItems.findIndex(item => item.track.toLowerCase() === track.toLowerCase());
-    let nextItems;
-    let message;
+    if (!await savePool(track, source)) return;
 
-    if (matchIndex === -1) {
-      nextItems = [...poolItems, { track, sources: [source], addedOn: new Date().toISOString() }];
-      message = `Added to the pool from ${source}.`;
-    } else {
-      const existing = poolItems[matchIndex];
-      if (existing.sources.some(name => name.toLowerCase() === source.toLowerCase())) {
-        showError('That track is already in the pool from that person.', sourceInput);
-        return;
-      }
-      // One entry per track: a second recommender adds a name, not a duplicate row (A6).
-      nextItems = poolItems.map((item, itemIndex) =>
-        itemIndex === matchIndex ? { ...item, sources: [...item.sources, source] } : item);
-      message = `${source} added as another source for that track.`;
-    }
-
-    if (!savePool(nextItems)) return;
-
-    poolItems = nextItems;
+    poolItems = await loadPool();
     renderPool();
     trackInput.value = '';
     sourceInput.value = '';
     trackInput.focus();
-    saveStatus.textContent = message;
+    saveStatus.textContent = `Added to the pool from ${source}.`;
   });
 
-  renderPool();
+  loadPool().then(items => {
+    poolItems = items;
+    renderPool();
+  });
 })();
