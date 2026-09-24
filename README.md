@@ -54,7 +54,6 @@ Then change `apiBase` at the top of `app.js` to `http://localhost:8787`. Deployi
 
 Read in this order:
 
-0. [`SCAFFOLD_MANIFEST.md`](SCAFFOLD_MANIFEST.md): what carries over, plus a submission checklist
 1. [`context/PROJECT.md`](context/PROJECT.md): the problem and its framing
 2. [`context/USERS.md`](context/USERS.md): who this is for
 3. [`context/FEATURES.md`](context/FEATURES.md): what it must do, and verification results
